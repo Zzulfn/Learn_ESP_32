@@ -1,0 +1,81 @@
+一、编译环境搭建
+
+1. 下载并安装ESP32 编译环境安装包：https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe
+
+2.  安装git工具：Git-2.20.1-64-bit
+
+3.  通过git工具下载IDFSDK： git clone --recursive https://github.com/espressif/esp-idf.git
+
+4.  设置环境变量：新增加：IDF_PATH        C:\Users\user-name\esp\esp-idf
+	            在PATH后面增加：   ;%IDF_PATH%\tools
+
+5.  安装Python软件包 。ESP-IDF 所需的 Python 软件包位于 IDF_PATH/requirements.txt 中。您可以运行以下命令进行安装：
+	           python -m pip install --user -r $IDF_PATH/requirements.txt
+
+6.  配置：idf.py menuconfig
+     上下箭头： 移动
+     回车： 进入子菜单
+     ESC键： 返回上级菜单或推出
+     空格、Y或N： 使能/禁用[*]配置选项
+     /键： 寻找配置项目
+
+7.  编译烧录工程：idf.py build
+
+8.  烧录到设备：
+     idf.py [-p  COM6] [-b 921600] flash 
+
+9.  监事器：make monitor   
+     Ctrl+]  退出监视
+
+二、 JTAG调试：
+ 1、需要软件：xtensa-esp-elf-gdb调试器，OpenOCD片上调试器：集成环境已经安装好OpenOCD
+      需要硬件：连接到ESP32目标的JTAG适配器。
+	       TMS -- GPIO14
+	       TCK -- GPIO13
+	       TDI -- GPIO12
+	       TDO -- GPIO15
+
+ 2、安装ESP-Prog 驱动：CDM21228_Setup
+      通过通过zadig-2.4：更改其驱动：为WinUBS
+
+ 3、启动OpenOCD: 
+      openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+
+ 4、用JTAG烧写程序：
+      openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32  ./build/thing_shadow.bin 0x10000 verify exit"
+	
+ 5、使用GDB调试程序：
+      1）启动运行目标
+      2）新开一个终端会话
+      3）创建配置文件gdbinit:
+           target remote localhost:3333
+           set remote hardware-watchpoint-limit 2
+           mon reset halt
+           flushregs
+           thb app_main
+           c
+
+6、 准备好启动GDB，请在终端中输入：
+      xtensa-esp32-elf-gdb -x gdbinit ./buildthing_shadow.elf
+
+7、 GDB 命令解析：
+       1）l 或者list:  打印停止点周围的代码
+       2）bt或者backtrace : 查看哪些函数最终调用了此函数
+       3）i threads : 查看当前运行线程
+       4） thread N: 进入N线程
+       5）  break  M  : 设置端点
+              break blink.c:34 if (i == 2) ：设置条件断点
+       6） c ：运行到下一个断点
+       7） info break: 设置断点的位置与数量
+       8） delete N :删除断点 N
+       9)    s 、 n  单步运行： s 进入函数内部，n 执行下个函数。
+      10）x/1wx 0x3FF44004 ：显示特定寄存器的值
+      11）set {unsigned int}0x3FF44004=0x000010：设置特定寄存器的值set var i = 0
+             set var i = 0 ：设置变量
+    
+ 
+     
+     
+
+
+
